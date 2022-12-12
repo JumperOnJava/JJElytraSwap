@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "id": "modid",
+  "id": "jjelytraswap",
   "version": "${version}",
 
-  "name": "Example Mod",
-  "description": "This is an example description! Tell everyone what your mod is about!",
+  "name": "Auto Elytra Swap",
+  "description": "Elytra swap mod made for SeltShaker",
   "authors": [
-    "Me!"
+    "JavaJumper"
   ],
   "contact": {
-    "homepage": "https://fabricmc.net/",
+    "homepage": "JavaJump3r.github.io",
     "sources": "https://github.com/FabricMC/fabric-example-mod"
   },
 
@@ -18,21 +18,17 @@
 
   "environment": "*",
   "entrypoints": {
-    "main": [
-      "net.fabricmc.example.ExampleMod"
+    "client": [
+      "io.github.javajump3r.ElytraSwapInit"
     ]
   },
   "mixins": [
-    "modid.mixins.json"
   ],
 
   "depends": {
     "fabricloader": ">=0.14.11",
     "fabric-api": "*",
-    "minecraft": "~1.19.3",
+    "minecraft": "~1.18.2",
     "java": ">=17"
-  },
-  "suggests": {
-    "another-mod": "*"
   }
 }
