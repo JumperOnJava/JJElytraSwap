@@ -1,9 +1,4 @@
-# Fabric Example Mod
-
-## Setup
-
-For setup instructions please see the [fabric wiki page](https://fabricmc.net/wiki/tutorial:setup) that relates to the IDE that you are using.
-
-## License
-
-This template is available under the CC0 license. Feel free to learn from it and incorporate it in your own projects.
+#Auto Elytra Swap
+Mod made for SeltShaker
+Clientside port and version upgrade of [this mod](https://www.curseforge.com/minecraft/mc-mods/elytra-swap "this mod")
+Requires Fabric API

@@ -12,74 +12,72 @@ import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.math.Vec3d;
+import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
+import java.util.logging.Logger;
 
 public class ElytraSwapInit implements ClientModInitializer {
-
+	int lastJumpPressTick =0;
 	public void onInitializeClient() {
-		ClientTickEvents.END_CLIENT_TICK.register(this::tick);
+		ClientTickEvents.END_CLIENT_TICK.register(ElytraSwapInit::tryWearChestplate);
 	}
 
 	private Vec3d prevPos=new Vec3d(0,0,0);
-	private void tick(MinecraftClient client) {
+
+	public static void tryWearChestplate(MinecraftClient client)
+	{
 		if(client.world==null)
 			return;
-		var velocity = client.player.getVelocity();
-		//velocity.subtract(prevPos);
-		//sendChatMessage(velocity.toString());
-		if(velocity.y<-0.5);
-		{
-			String message = velocity.y+"";
-			//MinecraftClient.getInstance().inGameHud.addChatMessage(MessageType.SYSTEM, new LiteralText(message), UUID.randomUUID());
-		}
+		if(client.player.isOnGround())
+			wearRequiredItem(false);
+	}
 
-		boolean b = false;
-		b = client.player.isFallFlying();
-		b = b || velocity.y < -0.7;
+	public static void tryWearElytra(MinecraftClient client) {
+		if(client.world==null)
+			return;
+
+		var logger = LoggerFactory.getLogger("JJElytraSwap");
+
+
 		var inventory = client.player.getInventory().main;
 		var armor = client.player.getInventory().armor;
 		var offhand = client.player.getInventory().offHand;
 
-		boolean b2=false;
-		for(var slot : inventory)
+		boolean shouldFly=true;
+		boolean haveElytra=false;
+		{
+			for(var slot : inventory)
+			{
+				if(slot.getItem()==Items.ELYTRA)
+				{
+					haveElytra=true;
+					break;
+				}
+			}for(var slot : armor)
 		{
 			if(slot.getItem()==Items.ELYTRA)
 			{
-				b2=true;
-				break;
-			}
-		}for(var slot : armor)
-		{
-			if(slot.getItem()==Items.ELYTRA)
-			{
-				b2=true;
-				break;
-			}
-		}
-		for(var slot : offhand)
-		{
-			if(slot.getItem()==Items.ELYTRA)
-			{
-				b2=true;
+				haveElytra=true;
 				break;
 			}
 		}
+			for(var slot : offhand)
+			{
+				if(slot.getItem()==Items.ELYTRA)
+				{
+					haveElytra=true;
+					break;
+				}
+			}
+		}
 
-		b = b && b2;
+		//shouldFly =
 
-		shouldWearElytra(b);
+		shouldFly = shouldFly && haveElytra;
+		wearRequiredItem(shouldFly);
 	}
-
-	boolean prevShould;
-	private void shouldWearElytra(boolean should) {
-		if(prevShould!=should)
-		{
-				wearChestplate(should);
-		}
-		prevShould = should;
-	}
-	private void wearChestplate(boolean shouldWearElytra) {
+	private static void wearRequiredItem(boolean isElytra) {
 		var client = MinecraftClient.getInstance();
 
 		int elytraSlot = -1;
@@ -105,12 +103,12 @@ public class ElytraSwapInit implements ClientModInitializer {
 				chestplateSlot = slot;
 			}
 		}
-		if(wearedItemStack.getItem()==Items.ELYTRA && !shouldWearElytra)
+		if(wearedItemStack.getItem()==Items.ELYTRA && !isElytra)
 		{
 			swap(chestplateSlot,client);
 			return;
 		}
-		if(wearedItemStack.getItem()!=Items.ELYTRA && shouldWearElytra)
+		if(wearedItemStack.getItem()!=Items.ELYTRA && isElytra)
 		{
 			swap(elytraSlot,client);
 			client.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(client.player, ClientCommandC2SPacket.Mode.START_FALL_FLYING));

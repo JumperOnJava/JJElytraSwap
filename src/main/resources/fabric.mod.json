@@ -10,11 +10,11 @@
   ],
   "contact": {
     "homepage": "JavaJump3r.github.io",
-    "sources": "https://github.com/FabricMC/fabric-example-mod"
+    "sources": "https://github.com/JavaJump3r/JJElytraSwap"
   },
 
   "license": "CC0-1.0",
-  "icon": "assets/modid/icon.png",
+  "icon": "assets/jjelytraswap/icon.png",
 
   "environment": "*",
   "entrypoints": {
@@ -23,6 +23,7 @@
     ]
   },
   "mixins": [
+    "jjelytraswap.mixins.json"
   ],
 
   "depends": {
