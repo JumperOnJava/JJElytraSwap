@@ -5,17 +5,10 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.*;
-import net.minecraft.network.MessageType;
 import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
-import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
-import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
 import net.minecraft.screen.slot.SlotActionType;
-import net.minecraft.text.LiteralText;
 import net.minecraft.util.math.Vec3d;
-import org.slf4j.LoggerFactory;
 
-import java.util.UUID;
-import java.util.logging.Logger;
 
 public class ElytraSwapInit implements ClientModInitializer {
 	int lastJumpPressTick =0;
@@ -36,9 +29,6 @@ public class ElytraSwapInit implements ClientModInitializer {
 	public static void tryWearElytra(MinecraftClient client) {
 		if(client.world==null)
 			return;
-
-		var logger = LoggerFactory.getLogger("JJElytraSwap");
-
 
 		var inventory = client.player.getInventory().main;
 		var armor = client.player.getInventory().armor;

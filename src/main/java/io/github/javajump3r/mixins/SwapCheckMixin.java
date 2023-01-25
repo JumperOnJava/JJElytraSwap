@@ -23,9 +23,7 @@ public class SwapCheckMixin {
         var target = ((ClientPlayerEntity)(Object)this);
         if (!target.isOnGround() && !target.isFallFlying() && !target.isTouchingWater() && !target.hasStatusEffect(StatusEffects.LEVITATION))
         {
-
             ElytraSwapInit.tryWearElytra(MinecraftClient.getInstance());
-
         }
     }
 }
