@@ -15,9 +15,10 @@ import net.minecraft.screen.slot.SlotActionType;
 public class ElytraSwapInit implements ClientModInitializer {
 
     public static void tryWearChestplate(MinecraftClient client) {
-        if (client.world == null) {
+        if (client.world == null || client.player == null) {
             return;
         }
+
         if (!client.player.isOnGround() || isSlotChestplate(client, 38)) {
             return;
         }
@@ -31,7 +32,9 @@ public class ElytraSwapInit implements ClientModInitializer {
     }
 
     public static void tryWearElytra(MinecraftClient client) {
-        if (client.world == null) return;
+        if (client.world == null || client.player == null) {
+            return;
+        }
 
         if (client.player.getInventory().getStack(38).getItem() == Items.ELYTRA) {
             return;
@@ -48,8 +51,12 @@ public class ElytraSwapInit implements ClientModInitializer {
 
     private static void wearElytra(int slotId, MinecraftClient client) {
         swap(slotId, client);
-        client.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(client.player, ClientCommandC2SPacket.Mode.START_FALL_FLYING));
-        client.player.startFallFlying();
+        try {
+            client.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(client.player, ClientCommandC2SPacket.Mode.START_FALL_FLYING));
+            client.player.startFallFlying();
+        } catch (NullPointerException ex) {
+            ex.printStackTrace();
+        }
     }
 
 
@@ -58,15 +65,20 @@ public class ElytraSwapInit implements ClientModInitializer {
         if (slot2 == 40) slot2 = 45;
         if (slot2 < 9) slot2 += 36;
 
-        client.interactionManager.clickSlot(0, slot2, 0, SlotActionType.PICKUP, client.player);
-
-        client.interactionManager.clickSlot(0, 6, 0, SlotActionType.PICKUP, client.player);
-
-        client.interactionManager.clickSlot(0, slot2, 0, SlotActionType.PICKUP, client.player);
+        try {
+            client.interactionManager.clickSlot(0, slot2, 0, SlotActionType.PICKUP, client.player);
+            client.interactionManager.clickSlot(0, 6, 0, SlotActionType.PICKUP, client.player);
+            client.interactionManager.clickSlot(0, slot2, 0, SlotActionType.PICKUP, client.player);
+        } catch (NullPointerException ex) {
+            ex.printStackTrace();
+        }
     }
 
     public static boolean isSlotChestplate(MinecraftClient client, int slotId) {
 
+        if (client.player == null) {
+            return false;
+        }
         ItemStack chestSlot = client.player.getInventory().getStack(slotId);
 
         return !chestSlot.isEmpty() &&
