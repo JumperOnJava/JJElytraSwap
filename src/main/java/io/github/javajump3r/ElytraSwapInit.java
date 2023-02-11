@@ -19,7 +19,7 @@ public class ElytraSwapInit implements ClientModInitializer {
             return;
         }
 
-        if (!client.player.isOnGround() || isSlotChestplate(client, 38)) {
+        if ( isSlotChestplate(client, 38)) {
             return;
         }
 
@@ -94,8 +94,16 @@ public class ElytraSwapInit implements ClientModInitializer {
         return range;
     }
 
+    public static boolean prevTickIsOnGround=true;
     public void onInitializeClient() {
-        ClientTickEvents.END_CLIENT_TICK.register(ElytraSwapInit::tryWearChestplate);
+        ClientTickEvents.END_CLIENT_TICK.register(client->{
+            if (client.world == null || client.player == null) {
+                return;
+            }
+            if(client.player.isOnGround()&&!prevTickIsOnGround)
+                tryWearChestplate(client);
+            prevTickIsOnGround=client.player.isOnGround();
+        });
     }
 
 }
