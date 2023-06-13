@@ -2,10 +2,7 @@ package io.github.javajump3r;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.resource.language.I18n;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.ArmorItem;
 import net.minecraft.item.ElytraItem;
@@ -13,11 +10,9 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
 import net.minecraft.screen.slot.SlotActionType;
-import net.minecraft.text.Text;
 
 
 public class ElytraSwapInit implements ClientModInitializer {
-    public static boolean enabled = true;
 
     public static void tryWearChestplate(MinecraftClient client) {
         if (client.world == null || client.player == null) {
@@ -101,25 +96,14 @@ public class ElytraSwapInit implements ClientModInitializer {
 
     public static boolean prevTickIsOnGround=true;
     public void onInitializeClient() {
-        var bind = new KeyBinding("jjelytraswap.keybind",-1,"LavaJumper");
         ClientTickEvents.END_CLIENT_TICK.register(client->{
             if (client.world == null || client.player == null) {
                 return;
             }
-
-            if(bind.wasPressed())
-            {
-                enabled=!enabled;
-                var ts = ("jjelytraswap."+(enabled?"enabled":"disabled"));
-                client.inGameHud.getChatHud().addMessage(Text.translatable(ts));
-            }
-            if(!enabled)
-                return;
             if(client.player.isOnGround()&&!prevTickIsOnGround)
                 tryWearChestplate(client);
             prevTickIsOnGround=client.player.isOnGround();
         });
-        KeyBindingHelper.registerKeyBinding(bind);
     }
 
 }
