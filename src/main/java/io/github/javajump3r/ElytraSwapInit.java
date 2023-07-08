@@ -8,13 +8,11 @@ import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.resource.language.I18n;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.ArmorItem;
-import net.minecraft.item.ElytraItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.text.Text;
-
 
 public class ElytraSwapInit implements ClientModInitializer {
     public static boolean enabled = true;
@@ -24,7 +22,7 @@ public class ElytraSwapInit implements ClientModInitializer {
             return;
         }
 
-        if ( isSlotChestplate(client, 38)) {
+        if (isSlotChestplate(client, 38)) {
             return;
         }
 
@@ -45,30 +43,30 @@ public class ElytraSwapInit implements ClientModInitializer {
             return;
         }
 
-        for (int slot : slotArray()) {
-            if (client.player.getInventory().getStack(slot).getItem() instanceof ElytraItem) {
-                wearElytra(slot, client);
-                return;
-            }
+        final int elytraSlot = ElytraFavorability.getFavorableSlot(client, slotArray());
+        if (elytraSlot >= 0) {
+            wearElytra(elytraSlot, client);
+
         }
     }
-
 
     private static void wearElytra(int slotId, MinecraftClient client) {
         swap(slotId, client);
         try {
-            client.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(client.player, ClientCommandC2SPacket.Mode.START_FALL_FLYING));
+            client.getNetworkHandler().sendPacket(
+                    new ClientCommandC2SPacket(client.player, ClientCommandC2SPacket.Mode.START_FALL_FLYING));
             client.player.startFallFlying();
         } catch (NullPointerException ex) {
             ex.printStackTrace();
         }
     }
 
-
     private static void swap(int slot, MinecraftClient client) {
         int slot2 = slot;
-        if (slot2 == 40) slot2 = 45;
-        if (slot2 < 9) slot2 += 36;
+        if (slot2 == 40)
+            slot2 = 45;
+        if (slot2 < 9)
+            slot2 += 36;
 
         try {
             client.interactionManager.clickSlot(0, slot2, 0, SlotActionType.PICKUP, client.player);
@@ -93,31 +91,33 @@ public class ElytraSwapInit implements ClientModInitializer {
 
     private static int[] slotArray() {
         int[] range = new int[37];
-        for (int i = 0; i < 9; i++) range[i] = 8 - i;
-        for (int i = 9; i < 36; i++) range[i] = 35 - (i - 9);
+        for (int i = 0; i < 9; i++)
+            range[i] = 8 - i;
+        for (int i = 9; i < 36; i++)
+            range[i] = 35 - (i - 9);
         range[36] = 40;
         return range;
     }
 
-    public static boolean prevTickIsOnGround=true;
+    public static boolean prevTickIsOnGround = true;
+
     public void onInitializeClient() {
-        var bind = new KeyBinding("jjelytraswap.keybind",-1,"LavaJumper");
-        ClientTickEvents.END_CLIENT_TICK.register(client->{
+        var bind = new KeyBinding("jjelytraswap.keybind", -1, "LavaJumper");
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.world == null || client.player == null) {
                 return;
             }
 
-            if(bind.wasPressed())
-            {
-                enabled=!enabled;
-                var ts = ("jjelytraswap."+(enabled?"enabled":"disabled"));
+            if (bind.wasPressed()) {
+                enabled = !enabled;
+                var ts = ("jjelytraswap." + (enabled ? "enabled" : "disabled"));
                 client.inGameHud.getChatHud().addMessage(Text.translatable(ts));
             }
-            if(!enabled)
+            if (!enabled)
                 return;
-            if(client.player.isOnGround()&&!prevTickIsOnGround)
+            if (client.player.isOnGround() && !prevTickIsOnGround)
                 tryWearChestplate(client);
-            prevTickIsOnGround=client.player.isOnGround();
+            prevTickIsOnGround = client.player.isOnGround();
         });
         KeyBindingHelper.registerKeyBinding(bind);
     }
