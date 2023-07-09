@@ -6,7 +6,11 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.resource.language.I18n;
+import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.entity.ItemSteerable;
 import net.minecraft.item.ArmorItem;
 import net.minecraft.item.ElytraItem;
 import net.minecraft.item.ItemStack;
@@ -14,6 +18,10 @@ import net.minecraft.item.Items;
 import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.text.Text;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 
 public class ElytraSwapInit implements ClientModInitializer {
@@ -27,6 +35,11 @@ public class ElytraSwapInit implements ClientModInitializer {
         if ( isSlotChestplate(client, 38)) {
             return;
         }
+
+        //i don't know slot order lol
+        if(!(client.player.getInventory().armor.get(2).getItem() == Items.ELYTRA ||
+           client.player.getInventory().armor.get(1).getItem() == Items.ELYTRA))
+            return;
 
         for (int slot : slotArray()) {
             if (isSlotChestplate(client, slot)) {
@@ -45,12 +58,29 @@ public class ElytraSwapInit implements ClientModInitializer {
             return;
         }
 
+        var elytraSlots = getElytraSlots();
+
+        elytraSlots.sort(Comparator.comparingInt(slot -> getElytraStat(client.player.getInventory().getStack(slot))));
+
+        if (!elytraSlots.isEmpty()) {
+            int bestSlot = elytraSlots.get(elytraSlots.size() - 1);
+            wearElytra(bestSlot, client);
+        }
+    }
+
+    private static List<Integer> getElytraSlots() {
+        List<Integer> elytraSlots = new ArrayList<>();
+
         for (int slot : slotArray()) {
-            if (client.player.getInventory().getStack(slot).getItem() instanceof ElytraItem) {
-                wearElytra(slot, client);
-                return;
+            if (MinecraftClient.getInstance().player.getInventory().getStack(slot).getItem() instanceof ElytraItem) {
+                elytraSlots.add(slot);
             }
         }
+        return elytraSlots;
+    }
+
+    private static int getElytraStat(ItemStack elytraItem) {
+        return (EnchantmentHelper.getLevel(Enchantments.MENDING,elytraItem)*3+1)+EnchantmentHelper.getLevel(Enchantments.UNBREAKING,elytraItem);
     }
 
 
