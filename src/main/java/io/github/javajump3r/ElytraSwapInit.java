@@ -1,5 +1,7 @@
 package io.github.javajump3r;
 
+import me.lunaluna.fabric.elytrarecast.Startup;
+import me.lunaluna.fabric.elytrarecast.config.Config;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -38,9 +40,22 @@ public class ElytraSwapInit implements ClientModInitializer {
             return;
         }
 
-        if(FabricLoader.getInstance().isModLoaded("elytra-recast"))
-            if(client.options.jumpKey.isPressed())
+        if(FabricLoader.getInstance().isModLoaded("elytra-recast")){
+            try {
+            //nah i'm not gonna add clothconfig dependency
+            //i'm going hard way
+            //(Startup.INSTANCE.getConfig().getEnabled() requires clothconfig)
+            Object configObject = Startup.INSTANCE.getConfig();
+            Class configClass = Config.class;
+            var method = configClass.getMethod("getEnabled");
+            Boolean isEnabled = (Boolean) method.invoke(configObject);
+            if(client.options.jumpKey.isPressed() && isEnabled)
                 return;
+            }
+            catch (Exception ignored){
+                ignored.printStackTrace();
+            }
+        }
 
         //i don't know slot order lol
         if(!(client.player.getInventory().armor.get(2).getItem() == Items.ELYTRA ||
