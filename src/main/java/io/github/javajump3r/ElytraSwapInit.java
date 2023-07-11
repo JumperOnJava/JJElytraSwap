@@ -1,8 +1,10 @@
 package io.github.javajump3r;
 
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.resource.language.I18n;
@@ -36,6 +38,10 @@ public class ElytraSwapInit implements ClientModInitializer {
             return;
         }
 
+        if(FabricLoader.getInstance().isModLoaded("elytra-recast"))
+            if(client.options.jumpKey.isPressed())
+                return;
+
         //i don't know slot order lol
         if(!(client.player.getInventory().armor.get(2).getItem() == Items.ELYTRA ||
            client.player.getInventory().armor.get(1).getItem() == Items.ELYTRA))
@@ -68,7 +74,7 @@ public class ElytraSwapInit implements ClientModInitializer {
         }
     }
 
-    private static List<Integer> getElytraSlots() {
+    public static List<Integer> getElytraSlots() {
         List<Integer> elytraSlots = new ArrayList<>();
 
         for (int slot : slotArray()) {
