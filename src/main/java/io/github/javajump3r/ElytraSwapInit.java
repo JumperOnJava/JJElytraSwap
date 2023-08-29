@@ -40,6 +40,10 @@ public class ElytraSwapInit implements ClientModInitializer {
             return;
         }
 
+        var chestplateSlots = getChestplateSlots();
+
+        chestplateSlots.sort(Comparator.comparingInt(slot -> getChestplateStat(client.player.getInventory().getStack(slot))));
+
         if(FabricLoader.getInstance().isModLoaded("elytra-recast")){
             try {
             //nah i'm not gonna add clothconfig dependency
@@ -62,11 +66,9 @@ public class ElytraSwapInit implements ClientModInitializer {
            client.player.getInventory().armor.get(1).getItem() == Items.ELYTRA))
             return;
 
-        for (int slot : slotArray()) {
-            if (isSlotChestplate(client, slot)) {
-                swap(slot, client);
-                return;
-            }
+        if (!chestplateSlots.isEmpty()) {
+            int bestSlot = chestplateSlots.get(0);
+            swap(bestSlot, client);
         }
     }
 
@@ -100,10 +102,26 @@ public class ElytraSwapInit implements ClientModInitializer {
         return elytraSlots;
     }
 
+    public static List<Integer> getChestplateSlots() {
+        List<Integer> chestplateSlots = new ArrayList<>();
+        var client = MinecraftClient.getInstance();
+
+        for (int slot : slotArray()) {
+            if (isSlotChestplate(client, slot)) {
+                chestplateSlots.add(slot);
+            }
+        }
+
+        return chestplateSlots;
+    }
+
     private static int getElytraStat(ItemStack elytraItem) {
         return (EnchantmentHelper.getLevel(Enchantments.MENDING,elytraItem)*3+1)+EnchantmentHelper.getLevel(Enchantments.UNBREAKING,elytraItem);
     }
 
+    private static int getChestplateStat(ItemStack chestplateItem) {
+        return EnchantmentHelper.getLevel(Enchantments.BINDING_CURSE, chestplateItem);
+    }
 
     private static void wearElytra(int slotId, MinecraftClient client) {
         swap(slotId, client);
