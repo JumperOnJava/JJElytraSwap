@@ -20,6 +20,10 @@ import net.minecraft.item.ElytraItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
+import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.text.Text;
 
@@ -114,13 +118,21 @@ public class ElytraSwapInit implements ClientModInitializer {
 
         return chestplateSlots;
     }
+    private static Registry<Enchantment> getEnchantmentRegistry() {
+        return MinecraftClient.getInstance().world.getRegistryManager().get(RegistryKeys.ENCHANTMENT);
+    }
+    private static int getLevel(RegistryKey<Enchantment> key, ItemStack stack) {
+        var enchant = getEnchantmentRegistry().get(key);
+        RegistryEntry<Enchantment> enchantEntry = getEnchantmentRegistry().getEntry(enchant);
+        return EnchantmentHelper.getLevel(enchantEntry,stack);
+    }
 
     private static int getElytraStat(ItemStack elytraItem) {
-        return (EnchantmentHelper.getLevel(Enchantments.MENDING,elytraItem)*3+1)+EnchantmentHelper.getLevel(Enchantments.UNBREAKING,elytraItem);
+        return (getLevel(Enchantments.MENDING,elytraItem)*3+1)+getLevel(Enchantments.UNBREAKING,elytraItem);
     }
 
     private static int getChestplateStat(ItemStack chestplateItem) {
-        return EnchantmentHelper.getLevel(Enchantments.BINDING_CURSE, chestplateItem);
+        return getLevel(Enchantments.BINDING_CURSE, chestplateItem);
     }
 
     private static void wearElytra(int slotId, MinecraftClient client) {
@@ -157,7 +169,8 @@ public class ElytraSwapInit implements ClientModInitializer {
 
         return !chestSlot.isEmpty() &&
                 chestSlot.getItem() instanceof ArmorItem &&
-                ((ArmorItem) chestSlot.getItem()).getSlotType() == EquipmentSlot.CHEST;
+                ((ArmorItem) chestSlot.getItem()).getSlotType() == EquipmentSlot.CHEST &&
+                getLevel(Enchantments.BINDING_CURSE, chestSlot) == 0;
     }
 
     private static int[] slotArray() {
