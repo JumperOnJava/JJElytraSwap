@@ -1,5 +1,5 @@
 //? if neoforge {
-package io.github.jumperonjava.jjelytraswap.platforms.neoforge;
+/*package io.github.jumperonjava.jjelytraswap.platforms.neoforge;
 
 import io.github.jumperonjava.jjelytraswap.JJElytraSwapInit;
 import io.github.jumperonjava.jjelytraswap.ModPlatform;
@@ -11,14 +11,14 @@ import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 //? if <1.21 {
-/*import net.neoforged.neoforge.client.ConfigScreenHandler;
+/^import net.neoforged.neoforge.client.ConfigScreenHandler;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.TickEvent;
 
 import java.util.function.Consumer;
 
-*///?} else {
+^///?} else {
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.common.NeoForge;
@@ -68,4 +68,4 @@ public class JJElytraSwapNeoForge {
         }
     }
 }
-//?}
+*///?}

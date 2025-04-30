@@ -35,7 +35,7 @@ import me.lunaluna.fabric.elytrarecast.config.Config;
 import javax.xml.crypto.Data;
 
 //? if < 1.21.5
-/*import net.minecraft.item.ArmorItem;*/
+import net.minecraft.item.ArmorItem;
 
 
 public class JJElytraSwapInit
@@ -51,17 +51,29 @@ public class JJElytraSwapInit
 	}
 	public static boolean enabled = true;
 
+	public static boolean stackHasComponent(ItemStack stack, ComponentType<?> type) {
+		//? if fabric || < 1.21.5 {
+		return stack.contains(type);
+		//?} else {
+		/*return stack.has(type);
+		*///?}
+	}
+
 	public static void tryWearChestplate(MinecraftClient client) {
+		LOGGER.info("twc 1");
 		if (client.world == null || client.player == null) {
 			return;
 		}
+		LOGGER.info("twc 2");
 
-		if ( isSlotChestplate(38)) {
+		if (client.player.getEquippedStack(EquipmentSlot.CHEST).isEmpty()) {
 			return;
 		}
+		LOGGER.info("twc 3");
 
 		var chestplateSlots = getChestplateSlots();
 
+		LOGGER.info("twc 4 {}", chestplateSlots.size());
 		chestplateSlots = chestplateSlots
 				.stream()
 				.filter(slot->(getChestplateStat(client.player.getInventory().getStack(slot))>0f))
@@ -75,7 +87,7 @@ public class JJElytraSwapInit
 		Collections.reverse(chestplateSlots);
 
 		//? if fabric {
-		/*if(PLATFORM.isModLoaded("elytra-recast")){
+		if(PLATFORM.isModLoaded("elytra-recast")){
 			try {
 				//nah i'm not gonna add clothconfig dependency
 				//i'm going hard way
@@ -91,16 +103,19 @@ public class JJElytraSwapInit
 				ignored.printStackTrace();
 			}
 		}
-		*///?}
+		//?}
 
-
-		if(client.player.getEquippedStack(EquipmentSlot.CHEST).getComponents().has(DataComponentTypes.GLIDER))
-			return;
+		LOGGER.info("twc 6");
+//		if(stackHasComponent(client.player.getEquippedStack(EquipmentSlot.CHEST),DataComponentTypes.GLIDER))
+//			return;
+		LOGGER.info("twc 7");
 
 		if (!chestplateSlots.isEmpty()) {
+			LOGGER.info("twc 8");
 			int bestSlot = chestplateSlots.get(0);
 			swap(bestSlot, client);
 		}
+		LOGGER.info("twc 9");
 	}
 
 	public static void tryWearElytra() {
@@ -108,7 +123,7 @@ public class JJElytraSwapInit
 			return;
 		}
 
-		if (MinecraftClient.getInstance().player.getInventory().getStack(38).getComponents().has(DataComponentTypes.GLIDER)) {
+		if (stackHasComponent(MinecraftClient.getInstance().player.getInventory().getStack(38),DataComponentTypes.GLIDER)) {
 			return;
 		}
 
@@ -126,7 +141,7 @@ public class JJElytraSwapInit
 		List<Integer> elytraSlots = new ArrayList<>();
 
 		for (int slot : slotArray()) {
-			if (MinecraftClient.getInstance().player.getInventory().getStack(slot).getComponents().has(DataComponentTypes.GLIDER)) {
+			if (stackHasComponent(MinecraftClient.getInstance().player.getInventory().getStack(slot),DataComponentTypes.GLIDER)) {
 				elytraSlots.add(slot);
 			}
 		}
@@ -167,7 +182,7 @@ public class JJElytraSwapInit
 
 		var holder = (ComponentHolder)chestplateItem;
 
-		if(chestplateItem.getComponents().has(DataComponentTypes.EQUIPPABLE)){
+		if(stackHasComponent(chestplateItem,DataComponentTypes.EQUIPPABLE)){
 			if(chestplateItem.get(DataComponentTypes.EQUIPPABLE).slot()==EquipmentSlot.CHEST){
 				var component = chestplateItem.get(DataComponentTypes.ATTRIBUTE_MODIFIERS);
 				for (AttributeModifiersComponent.Entry entry : component.modifiers()) {
@@ -181,7 +196,7 @@ public class JJElytraSwapInit
 				}
 				score += getLevel(Enchantments.PROTECTION,chestplateItem)*2;
 				score += getLevel(Enchantments.MENDING,chestplateItem)*0.5;
-				score += chestplateItem.getComponents().has(DataComponentTypes.CUSTOM_NAME)?0.25:0;
+				score += stackHasComponent(chestplateItem,DataComponentTypes.CUSTOM_NAME)?0.25:0;
 				score += getLevel(Enchantments.UNBREAKING,chestplateItem)*0.24/3;
 			}
 		}
@@ -193,10 +208,10 @@ public class JJElytraSwapInit
 		swap(slotId, MinecraftClient.getInstance());
 		try {
 			//? if fabric {
-			/*client.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(client.player, ClientCommandC2SPacket.Mode.START_FALL_FLYING));
-			*///?} else {
-			MinecraftClient.getInstance().getNetworkHandler().send(new ClientCommandC2SPacket(MinecraftClient.getInstance().player, ClientCommandC2SPacket.Mode.START_FALL_FLYING));
-			//?}
+			MinecraftClient.getInstance().getNetworkHandler().sendPacket(new ClientCommandC2SPacket(MinecraftClient.getInstance().player, ClientCommandC2SPacket.Mode.START_FALL_FLYING));
+			//?} else {
+			/*MinecraftClient.getInstance().getNetworkHandler().send(new ClientCommandC2SPacket(MinecraftClient.getInstance().player, ClientCommandC2SPacket.Mode.START_FALL_FLYING));
+			*///?}
 
 			MinecraftClient.getInstance().player.startGliding();
 		} catch (NullPointerException ex) {
@@ -226,7 +241,7 @@ public class JJElytraSwapInit
 		ItemStack chestSlot = MinecraftClient.getInstance().player.getInventory().getStack(slotId);
 
 		return !chestSlot.isEmpty() &&
-				chestSlot.getComponents().has(DataComponentTypes.EQUIPPABLE) &&
+				stackHasComponent(chestSlot,DataComponentTypes.EQUIPPABLE) &&
 				chestSlot.get(DataComponentTypes.EQUIPPABLE).slot() == EquipmentSlot.CHEST &&
 				getLevel(Enchantments.BINDING_CURSE,chestSlot) == 0;
 	}
@@ -255,10 +270,16 @@ public class JJElytraSwapInit
 			}
 			if(!enabled)
 				return;
+			LOGGER.info("loop 1");
 			boolean isInAir = !client.player.isOnGround() && !client.player.isInFluid();
 			boolean shouldWearChestplate = !isInAir;
-			if(shouldWearChestplate && !shouldWearChestplatePrevTick)
-				tryWearChestplate(client);
+			LOGGER.info("loop swc? {} {}", shouldWearChestplate, shouldWearChestplatePrevTick);
+			if(shouldWearChestplate && !shouldWearChestplatePrevTick){
+				LOGGER.info("loop swc");
+				if(stackHasComponent(MinecraftClient.getInstance().player.getEquippedStack(EquipmentSlot.CHEST),DataComponentTypes.GLIDER)){
+					tryWearChestplate(client);
+				}
+			}
 			shouldWearChestplatePrevTick = shouldWearChestplate;
 		});
 

@@ -1,5 +1,5 @@
 //? if fabric {
-/*package io.github.jumperonjava.jjelytraswap.platforms.fabric;
+package io.github.jumperonjava.jjelytraswap.platforms.fabric;
 
 import com.terraformersmc.modmenu.api.ConfigScreenFactory;
 import com.terraformersmc.modmenu.api.ModMenuApi;
@@ -10,4 +10,4 @@ public class ModMenuIntegration implements ModMenuApi {
         return ConfigScreen::createConfigScreen;
     }
 }
-*///?}
+//?}
