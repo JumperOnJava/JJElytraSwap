@@ -60,20 +60,16 @@ public class JJElytraSwapInit
 	}
 
 	public static void tryWearChestplate(MinecraftClient client) {
-		LOGGER.info("twc 1");
 		if (client.world == null || client.player == null) {
 			return;
 		}
-		LOGGER.info("twc 2");
 
 		if (client.player.getEquippedStack(EquipmentSlot.CHEST).isEmpty()) {
 			return;
 		}
-		LOGGER.info("twc 3");
 
 		var chestplateSlots = getChestplateSlots();
 
-		LOGGER.info("twc 4 {}", chestplateSlots.size());
 		chestplateSlots = chestplateSlots
 				.stream()
 				.filter(slot->(getChestplateStat(client.player.getInventory().getStack(slot))>0f))
@@ -105,17 +101,14 @@ public class JJElytraSwapInit
 		}
 		//?}
 
-		LOGGER.info("twc 6");
+
 //		if(stackHasComponent(client.player.getEquippedStack(EquipmentSlot.CHEST),DataComponentTypes.GLIDER))
 //			return;
-		LOGGER.info("twc 7");
 
 		if (!chestplateSlots.isEmpty()) {
-			LOGGER.info("twc 8");
 			int bestSlot = chestplateSlots.get(0);
 			swap(bestSlot, client);
 		}
-		LOGGER.info("twc 9");
 	}
 
 	public static void tryWearElytra() {
@@ -270,12 +263,9 @@ public class JJElytraSwapInit
 			}
 			if(!enabled)
 				return;
-			LOGGER.info("loop 1");
 			boolean isInAir = !client.player.isOnGround() && !client.player.isInFluid();
 			boolean shouldWearChestplate = !isInAir;
-			LOGGER.info("loop swc? {} {}", shouldWearChestplate, shouldWearChestplatePrevTick);
 			if(shouldWearChestplate && !shouldWearChestplatePrevTick){
-				LOGGER.info("loop swc");
 				if(stackHasComponent(MinecraftClient.getInstance().player.getEquippedStack(EquipmentSlot.CHEST),DataComponentTypes.GLIDER)){
 					tryWearChestplate(client);
 				}
