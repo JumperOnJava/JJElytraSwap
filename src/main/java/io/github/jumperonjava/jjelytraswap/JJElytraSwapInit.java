@@ -35,7 +35,7 @@ import me.lunaluna.fabric.elytrarecast.config.Config;
 import javax.xml.crypto.Data;
 
 //? if < 1.21.5
-import net.minecraft.item.ArmorItem;
+/*import net.minecraft.item.ArmorItem;*/
 
 
 public class JJElytraSwapInit
