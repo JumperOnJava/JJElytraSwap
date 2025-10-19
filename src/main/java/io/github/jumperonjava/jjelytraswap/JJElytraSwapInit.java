@@ -1,5 +1,6 @@
 package io.github.jumperonjava.jjelytraswap;
 
+import me.lunaluna.fabric.elytrarecast.config.ElytraRecastConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.component.ComponentHolder;
 import net.minecraft.component.ComponentType;
@@ -23,19 +24,18 @@ import net.minecraft.text.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Collections;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import me.lunaluna.fabric.elytrarecast.Startup;
-import me.lunaluna.fabric.elytrarecast.config.Config;
 
 import javax.xml.crypto.Data;
 
 //? if < 1.21.5
-/*import net.minecraft.item.ArmorItem;*/
+import net.minecraft.item.ArmorItem;
 
 
 public class JJElytraSwapInit
@@ -85,14 +85,8 @@ public class JJElytraSwapInit
 		//? if fabric {
 		if(PLATFORM.isModLoaded("elytra-recast")){
 			try {
-				//nah i'm not gonna add clothconfig dependency
-				//i'm going hard way
-				//(Startup.INSTANCE.getConfig().getEnabled() requires clothconfig)
-				Object configObject = Startup.INSTANCE.getConfig();
-				Class configClass = Config.class;
-				var method = configClass.getMethod("getEnabled");
-				Boolean isEnabled = (Boolean) method.invoke(configObject);
-				if(client.options.jumpKey.isPressed() && isEnabled)
+
+				if(client.options.jumpKey.isPressed() && elytraRecastEnabled())
 					return;
 			}
 			catch (Exception ignored){
@@ -109,6 +103,10 @@ public class JJElytraSwapInit
 			int bestSlot = chestplateSlots.get(0);
 			swap(bestSlot, client);
 		}
+	}
+
+	private static boolean elytraRecastEnabled() throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+		return ElytraRecastConfig.enabled && ElytraRecastConfig.jumpEnabled;
 	}
 
 	public static void tryWearElytra() {
@@ -249,7 +247,7 @@ public class JJElytraSwapInit
 
 	public static boolean shouldWearChestplatePrevTick =true;
 	public static void onInitializeClient() {
-		var bind = PLATFORM.registerKeyBind("jjelytraswap.keybind",-1,"JJElytraSwap");
+		var bind = PLATFORM.registerKeyBind("jjelytraswap.keybind",-1);
 		PLATFORM.registerClientTickEvent(client->{
 			if (client.world == null || client.player == null) {
 				return;

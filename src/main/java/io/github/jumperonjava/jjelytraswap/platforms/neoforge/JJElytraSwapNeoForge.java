@@ -5,6 +5,7 @@ import io.github.jumperonjava.jjelytraswap.JJElytraSwapInit;
 import io.github.jumperonjava.jjelytraswap.ModPlatform;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
+import net.minecraft.util.Identifier;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModList;
@@ -61,10 +62,17 @@ public class JJElytraSwapNeoForge {
         }
 
         @Override
-        public KeyBinding registerKeyBind(String translationKeyName, int defaultKeyId, String category) {
-            var keyBinding = new KeyBinding(translationKeyName, defaultKeyId, category);
+        public KeyBinding registerKeyBind(String translationKeyName, int defaultKeyId) {
+            //? if >= 1.21.9 {
+            /^KeyBinding.Category kbCategory = new KeyBinding.Category(Identifier.of("jjelytraswap","generic"));
+            var keyBinding = new KeyBinding(translationKeyName,defaultKeyId,kbCategory);
             MOD_EVENT_BUS.addListener((Consumer<RegisterKeyMappingsEvent>) event -> event.register(keyBinding));
             return keyBinding;
+            ^///?} else {
+            var keyBinding = new KeyBinding(translationKeyName, defaultKeyId, "JJElytraSwap");
+            MOD_EVENT_BUS.addListener((Consumer<RegisterKeyMappingsEvent>) event -> event.register(keyBinding));
+            return keyBinding;
+            //?}
         }
     }
 }

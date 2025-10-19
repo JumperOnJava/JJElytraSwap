@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
+import net.minecraft.util.Identifier;
 
 import java.util.function.Consumer;
 
@@ -36,10 +37,17 @@ public class JJElytraSwapFabric implements ClientModInitializer {
 		}
 
 		@Override
-		public KeyBinding registerKeyBind(String translationKeyName, int defaultKeyId, String category) {
-			var bind = new KeyBinding(translationKeyName,defaultKeyId,category);
+		public KeyBinding registerKeyBind(String translationKeyName, int defaultKeyId) {
+			//? if >= 1.21.9 {
+			/*KeyBinding.Category kbCategory = new KeyBinding.Category(Identifier.of("jjelytraswap","generic"));
+			var bind = new KeyBinding(translationKeyName,defaultKeyId,kbCategory);
 			KeyBindingHelper.registerKeyBinding(bind);
 			return bind;
+			*///?} else {
+			var bind = new KeyBinding(translationKeyName,defaultKeyId,"JJElytraSwap");
+			KeyBindingHelper.registerKeyBinding(bind);
+			return bind;
+			//?}
 		}
 	}
 }

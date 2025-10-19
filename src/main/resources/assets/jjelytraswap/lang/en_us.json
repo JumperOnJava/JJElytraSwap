@@ -1,6 +1,7 @@
 {
   "jjelytraswap.enabled": "Elytra swap is enabled",
   "jjelytraswap.disabled": "Elytra swap is disabled",
-  "jjelytraswap.keybind": "Enable/disable elytra swap"
+  "jjelytraswap.keybind": "Toggle elytra swap",
+  "key.category.jjelytraswap.generic": "JJElytraSwap"
 
 }

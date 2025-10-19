@@ -15,5 +15,5 @@ public interface ModPlatform {
     boolean isModLoaded(String modloader);
     void registerClientTickEvent(Consumer<MinecraftClient> o);
 
-    KeyBinding registerKeyBind(String translationKeyName, int defaultKeyId, String category);
+    KeyBinding registerKeyBind(String translationKeyName, int defaultKeyId);
 }
