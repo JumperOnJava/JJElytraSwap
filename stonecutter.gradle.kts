@@ -1,11 +1,11 @@
 plugins {
     id("dev.kikugie.stonecutter")
-    id("dev.architectury.loom") version "1.11-SNAPSHOT" apply false
+    id("dev.architectury.loom") version "1.13-SNAPSHOT" apply false
     id("architectury-plugin") version "3.4-SNAPSHOT" apply false
-    id("com.github.johnrengelman.shadow") version "8.1.1" apply false
+    id("com.gradleup.shadow") version "9.3.0" apply false
     id("me.modmuss50.mod-publish-plugin") version "0.8.4" apply false
 }
-stonecutter active "1.21.3-fabric" /* [SC] DO NOT EDIT */
+stonecutter active "1.21.11-neoforge" /* [SC] DO NOT EDIT */
 stonecutter.automaticPlatformConstants = true
 
 // Builds every version into `build/libs/{mod.version}/{loader}`

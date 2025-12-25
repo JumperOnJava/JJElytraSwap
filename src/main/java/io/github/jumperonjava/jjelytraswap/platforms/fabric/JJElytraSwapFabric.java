@@ -1,5 +1,5 @@
 //? if fabric {
-package io.github.jumperonjava.jjelytraswap.platforms.fabric;
+/*package io.github.jumperonjava.jjelytraswap.platforms.fabric;
 
 import io.github.jumperonjava.jjelytraswap.ModPlatform;
 import net.fabricmc.api.ClientModInitializer;
@@ -39,16 +39,16 @@ public class JJElytraSwapFabric implements ClientModInitializer {
 		@Override
 		public KeyBinding registerKeyBind(String translationKeyName, int defaultKeyId) {
 			//? if >= 1.21.9 {
-			/*KeyBinding.Category kbCategory = new KeyBinding.Category(Identifier.of("jjelytraswap","generic"));
+			KeyBinding.Category kbCategory = new KeyBinding.Category(Identifier.of("jjelytraswap","generic"));
 			var bind = new KeyBinding(translationKeyName,defaultKeyId,kbCategory);
 			KeyBindingHelper.registerKeyBinding(bind);
 			return bind;
-			*///?} else {
-			var bind = new KeyBinding(translationKeyName,defaultKeyId,"JJElytraSwap");
+			//?} else {
+			/^var bind = new KeyBinding(translationKeyName,defaultKeyId,"JJElytraSwap");
 			KeyBindingHelper.registerKeyBinding(bind);
 			return bind;
-			//?}
+			^///?}
 		}
 	}
 }
-//?}
+*///?}

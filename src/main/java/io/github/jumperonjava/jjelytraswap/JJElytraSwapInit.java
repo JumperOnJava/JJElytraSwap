@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 import javax.xml.crypto.Data;
 
 //? if < 1.21.5
-import net.minecraft.item.ArmorItem;
+/*import net.minecraft.item.ArmorItem;*/
 
 
 public class JJElytraSwapInit
@@ -53,10 +53,10 @@ public class JJElytraSwapInit
 
 	public static boolean stackHasComponent(ItemStack stack, ComponentType<?> type) {
 		//? if fabric || < 1.21.5 {
-		return stack.contains(type);
-		//?} else {
-		/*return stack.has(type);
-		*///?}
+		/*return stack.contains(type);
+		*///?} else {
+		return stack.has(type);
+		//?}
 	}
 
 	public static void tryWearChestplate(MinecraftClient client) {
@@ -83,7 +83,7 @@ public class JJElytraSwapInit
 		Collections.reverse(chestplateSlots);
 
 		//? if fabric {
-		if(PLATFORM.isModLoaded("elytra-recast")){
+		/*if(PLATFORM.isModLoaded("elytra-recast")){
 			try {
 
 				if(client.options.jumpKey.isPressed() && elytraRecastEnabled())
@@ -93,7 +93,7 @@ public class JJElytraSwapInit
 				ignored.printStackTrace();
 			}
 		}
-		//?}
+		*///?}
 
 
 //		if(stackHasComponent(client.player.getEquippedStack(EquipmentSlot.CHEST),DataComponentTypes.GLIDER))
@@ -199,10 +199,10 @@ public class JJElytraSwapInit
 		swap(slotId, MinecraftClient.getInstance());
 		try {
 			//? if fabric {
-			MinecraftClient.getInstance().getNetworkHandler().sendPacket(new ClientCommandC2SPacket(MinecraftClient.getInstance().player, ClientCommandC2SPacket.Mode.START_FALL_FLYING));
-			//?} else {
-			/*MinecraftClient.getInstance().getNetworkHandler().send(new ClientCommandC2SPacket(MinecraftClient.getInstance().player, ClientCommandC2SPacket.Mode.START_FALL_FLYING));
-			*///?}
+			/*MinecraftClient.getInstance().getNetworkHandler().sendPacket(new ClientCommandC2SPacket(MinecraftClient.getInstance().player, ClientCommandC2SPacket.Mode.START_FALL_FLYING));
+			*///?} else {
+			MinecraftClient.getInstance().getNetworkHandler().send(new ClientCommandC2SPacket(MinecraftClient.getInstance().player, ClientCommandC2SPacket.Mode.START_FALL_FLYING));
+			//?}
 
 			MinecraftClient.getInstance().player.startGliding();
 		} catch (NullPointerException ex) {
