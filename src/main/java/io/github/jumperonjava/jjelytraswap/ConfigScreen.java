@@ -1,3 +1,4 @@
+//? if <26.2 {
 package io.github.jumperonjava.jjelytraswap;
 
 import net.minecraft.client.gui.DrawContext;
@@ -26,3 +27,20 @@ public class ConfigScreen extends Screen {
         return new ConfigScreen(parent);
     }
 }
+//?} else {
+/*package io.github.jumperonjava.jjelytraswap;
+
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+
+public class ConfigScreen extends Screen {
+
+    public ConfigScreen(Screen parent) {
+        super(Component.empty());
+    }
+
+    public static ConfigScreen createConfigScreen(Screen parent) {
+        return new ConfigScreen(parent);
+    }
+}
+*///?}
