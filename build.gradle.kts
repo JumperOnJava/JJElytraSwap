@@ -1,4 +1,6 @@
 import me.modmuss50.mpp.ReleaseType
+import net.fabricmc.loom.task.RemapJarTask
+import org.gradle.jvm.tasks.Jar
 import java.util.*
 
 plugins {
@@ -10,6 +12,17 @@ plugins {
 
 val minecraft = stonecutter.current.version
 val loader = loom.platform.get().name.lowercase()
+// 26.2+ is unobfuscated: no Yarn/Mojang mappings are published, so loom has
+// nothing to remap and does not register a remapJar task. We compile directly
+// against the official-names Minecraft jar (no mappings(...) dependency, no
+// access widener) and ship the plain jar as the final artifact. Toggled
+// per-version via the fabric.loom.disableObfuscation gradle property
+// (see versions/26.2-fabric). Base loom stays in the plugins block so the loom
+// extension accessor is generated; loom-specific configurations/tasks that are
+// not registered in no-remap mode are referenced by name (tasks.named/add) and
+// only used when !noRemap. architectury-plugin 3.5+ tolerates the absent
+// remapJar task that older versions hard-required.
+val noRemap = stonecutter.eval(minecraft, ">=26.2")
 
 version = "${mod.version}+$minecraft"
 group = mod.group
@@ -32,25 +45,33 @@ repositories {
     maven("https://api.modrinth.com/maven")
 }
 dependencies {
-    minecraft("com.mojang:minecraft:$minecraft")
+    add("minecraft", "com.mojang:minecraft:$minecraft")
 
 
-    modCompileOnly("maven.modrinth:elytra-recast:${mod.dep("elytra_recast")}")
+    if (stonecutter.eval(minecraft, "<26.2")) {
+        add("modCompileOnly", "maven.modrinth:elytra-recast:${mod.dep("elytra_recast")}")
+    }
 
     if (loader == "fabric") {
-        modImplementation("net.fabricmc:fabric-loader:${mod.dep("fabric_loader")}")
-        mappings("net.fabricmc:yarn:$minecraft+build.${mod.dep("yarn_build")}:v2")
-        modCompileOnly("com.terraformersmc:modmenu:${mod.dep("modmenu_version")}")
-
-        //some features (like automatic resource loading from non vanilla namespaces) work only with fabric API installed
-        //for example translations from assets/modid/lang/en_us.json won't be working, same stuff with textures
-        //but we keep runtime only to not accidentally depend on fabric's api, because it doesn't exist in neo/forge
-        modImplementation("net.fabricmc.fabric-api:fabric-api:${mod.dep("fabric_version")}")
-
+        if (noRemap) {
+            // 26.2 unobfuscated: no mappings, plain implementation/compileOnly (no
+            // mod* remap configurations), plain jar is the artifact (no remapJar).
+            implementation("net.fabricmc:fabric-loader:${mod.dep("fabric_loader")}")
+            compileOnly("com.terraformersmc:modmenu:${mod.dep("modmenu_version")}")
+            implementation("net.fabricmc.fabric-api:fabric-api:${mod.dep("fabric_version")}")
+        } else {
+            add("mappings", "net.fabricmc:yarn:$minecraft+build.${mod.dep("yarn_build")}:v2")
+            add("modImplementation", "net.fabricmc:fabric-loader:${mod.dep("fabric_loader")}")
+            add("modCompileOnly", "com.terraformersmc:modmenu:${mod.dep("modmenu_version")}")
+            //some features (like automatic resource loading from non vanilla namespaces) work only with fabric API installed
+            //for example translations from assets/modid/lang/en_us.json won't be working, same stuff with textures
+            //but we keep runtime only to not accidentally depend on fabric's api, because it doesn't exist in neo/forge
+            add("modImplementation", "net.fabricmc.fabric-api:fabric-api:${mod.dep("fabric_version")}")
+        }
     }
     if (loader == "forge") {
         "forge"("net.minecraftforge:forge:${minecraft}-${mod.dep("forge_loader")}")
-        mappings("net.fabricmc:yarn:$minecraft+build.${mod.dep("yarn_build")}:v2")
+        add("mappings", "net.fabricmc:yarn:$minecraft+build.${mod.dep("yarn_build")}:v2")
 
         "io.github.llamalad7:mixinextras-forge:${mod.dep("mixin_extras")}".let {
             implementation(it)
@@ -59,7 +80,7 @@ dependencies {
     }
     if (loader == "neoforge") {
         "neoForge"("net.neoforged:neoforge:${mod.dep("neoforge_loader")}")
-        mappings(loom.layered {
+        add("mappings", loom.layered {
             mappings("net.fabricmc:yarn:$minecraft+build.${mod.dep("yarn_build")}:v2")
             mod.dep("neoforge_patch").takeUnless { it.startsWith('[') }?.let {
                 mappings("dev.architectury:yarn-mappings-patch-neoforge:$it")
@@ -69,7 +90,9 @@ dependencies {
 }
 
 loom {
-    accessWidenerPath = rootProject.file("src/main/resources/jjelytraswap.accesswidener")
+    if (!noRemap) {
+        accessWidenerPath = rootProject.file("src/main/resources/jjelytraswap.accesswidener")
+    }
 
     decompilers {
         get("vineflower").apply { // Adds names to lambdas - useful for mixins
@@ -95,7 +118,7 @@ publishMods {
     val curseforgeToken = localProperties.getProperty("publish.curseforgeToken", "")
 
 
-    file = project.tasks.remapJar.get().archiveFile
+    file = if (noRemap) tasks.jar.get().archiveFile else tasks.named<RemapJarTask>("remapJar").get().archiveFile
     dryRun = modrinthToken == null || curseforgeToken == null
 
     displayName = "${mod.name} ${loader.replaceFirstChar { it.uppercase() }} ${property("mod.mc_title")}-${mod.version}"
@@ -129,7 +152,11 @@ publishMods {
 
 java {
     withSourcesJar()
-    val java = if (stonecutter.eval(minecraft, ">=1.20.5")) JavaVersion.VERSION_21 else JavaVersion.VERSION_17
+    val java = when {
+        stonecutter.eval(minecraft, ">=26.2") -> JavaVersion.VERSION_25
+        stonecutter.eval(minecraft, ">=1.20.5") -> JavaVersion.VERSION_21
+        else -> JavaVersion.VERSION_17
+    }
     targetCompatibility = java
     sourceCompatibility = java
 }
@@ -144,21 +171,29 @@ tasks.shadowJar {
     archiveClassifier = "dev-shadow"
 }
 
-tasks.remapJar {
-    injectAccessWidener = true
-    input = tasks.shadowJar.get().archiveFile
-    archiveClassifier = null
-    dependsOn(tasks.shadowJar)
-}
-
-tasks.jar {
-    archiveClassifier = "dev"
+if (!noRemap) {
+    tasks.named<RemapJarTask>("remapJar") {
+        injectAccessWidener = true
+        input = tasks.shadowJar.get().archiveFile
+        archiveClassifier = null
+        dependsOn(tasks.shadowJar)
+    }
+    tasks.jar {
+        archiveClassifier = "dev"
+    }
+} else {
+    // 26.2 no-remap: the plain jar is the final artifact (no remapJar step).
+    tasks.jar {
+        archiveClassifier = null
+    }
 }
 
 val buildAndCollect = tasks.register<Copy>("buildAndCollect") {
     group = "versioned"
     description = "Must run through 'chiseledBuild'"
-    from(tasks.remapJar.get().archiveFile, tasks.remapSourcesJar.get().archiveFile)
+    val mainJar = if (noRemap) tasks.jar.get().archiveFile else tasks.named<RemapJarTask>("remapJar").get().archiveFile
+    val sourcesJar = if (noRemap) (tasks.getByName("sourcesJar") as Jar).archiveFile else tasks.named<Jar>("remapSourcesJar").get().archiveFile
+    from(mainJar, sourcesJar)
     into(rootProject.layout.buildDirectory.file("libs/${mod.version}/$loader"))
     dependsOn("build")
 }

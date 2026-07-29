@@ -1,11 +1,11 @@
 plugins {
     id("dev.kikugie.stonecutter")
-    id("dev.architectury.loom") version "1.13-SNAPSHOT" apply false
-    id("architectury-plugin") version "3.4-SNAPSHOT" apply false
+    id("dev.architectury.loom") version "1.17-SNAPSHOT" apply false
+    id("architectury-plugin") version "3.5-SNAPSHOT" apply false
     id("com.gradleup.shadow") version "9.3.0" apply false
     id("me.modmuss50.mod-publish-plugin") version "0.8.4" apply false
 }
-stonecutter active "1.21.11-neoforge" /* [SC] DO NOT EDIT */
+stonecutter active "26.2-fabric" /* [SC] DO NOT EDIT */
 stonecutter.automaticPlatformConstants = true
 
 // Builds every version into `build/libs/{mod.version}/{loader}`
@@ -20,6 +20,16 @@ stonecutter registerChiseled tasks.register("chiseledPublishMods", stonecutter.c
 stonecutter registerChiseled tasks.register("chiseledRunAllClients", stonecutter.chiseled) {
     group = "project"
     ofTask("runClient")
+}
+
+// Builds only the currently active version (stonecutter active "…"). Unlike
+// chiseledBuild (all versions) this chisels + builds just one version, which is
+// what you want when iterating on a single MC version. The versions filter runs
+// lazily, so it doesn't need stonecutter.tree to be populated at registration time.
+stonecutter registerChiseled tasks.register("chiseledBuildActive", stonecutter.chiseled) {
+    group = "project"
+    versions { _, v -> v.isActive }
+    ofTask("buildAndCollect")
 }
 
 
