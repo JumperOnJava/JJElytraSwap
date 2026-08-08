@@ -17,11 +17,13 @@ val loader = project.name.substringAfterLast('-')
 val useFabricLoomDirect = loader == "fabric" && minecraft.startsWith("26.")
 
 plugins {
-    id("architectury-plugin")
     id("me.modmuss50.mod-publish-plugin")
     id("com.gradleup.shadow")
 }
 
+if (!useFabricLoomDirect) {
+    apply(plugin = "architectury-plugin")
+}
 apply(plugin = if (useFabricLoomDirect) "net.fabricmc.fabric-loom" else "dev.architectury.loom")
 
 version = "${mod.version}+$minecraft"
@@ -30,10 +32,12 @@ base {
     archivesName.set("${mod.id}-$loader")
 }
 
-architectury.common(stonecutter.tree.branches.mapNotNull {
-    if (stonecutter.current.project !in it) null
-    else it.prop("loom.platform")
-})
+if (!useFabricLoomDirect) {
+    architectury.common(stonecutter.tree.branches.mapNotNull {
+        if (stonecutter.current.project !in it) null
+        else it.prop("loom.platform")
+    })
+}
 repositories {
     maven("https://maven.neoforged.net/releases/")
 
