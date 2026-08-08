@@ -31,6 +31,12 @@ repositories {
 
     maven("https://api.modrinth.com/maven")
 }
+// Minecraft 26.1+ ships unobfuscated with Mojang's official names built in.
+// Yarn was discontinued as of 26.1, so there is nothing to resolve for these
+// targets - see MIGRATION-26.2.md for the caveat this doesn't fully resolve
+// (Architectury Loom itself doesn't yet support mapping-less builds).
+val usesYarnMappings = !minecraft.startsWith("26.")
+
 dependencies {
     minecraft("com.mojang:minecraft:$minecraft")
 
@@ -39,7 +45,9 @@ dependencies {
 
     if (loader == "fabric") {
         modImplementation("net.fabricmc:fabric-loader:${mod.dep("fabric_loader")}")
-        mappings("net.fabricmc:yarn:$minecraft+build.${mod.dep("yarn_build")}:v2")
+        if (usesYarnMappings) {
+            mappings("net.fabricmc:yarn:$minecraft+build.${mod.dep("yarn_build")}:v2")
+        }
         modCompileOnly("com.terraformersmc:modmenu:${mod.dep("modmenu_version")}")
 
         //some features (like automatic resource loading from non vanilla namespaces) work only with fabric API installed
@@ -50,7 +58,9 @@ dependencies {
     }
     if (loader == "forge") {
         "forge"("net.minecraftforge:forge:${minecraft}-${mod.dep("forge_loader")}")
-        mappings("net.fabricmc:yarn:$minecraft+build.${mod.dep("yarn_build")}:v2")
+        if (usesYarnMappings) {
+            mappings("net.fabricmc:yarn:$minecraft+build.${mod.dep("yarn_build")}:v2")
+        }
 
         "io.github.llamalad7:mixinextras-forge:${mod.dep("mixin_extras")}".let {
             implementation(it)
@@ -59,12 +69,14 @@ dependencies {
     }
     if (loader == "neoforge") {
         "neoForge"("net.neoforged:neoforge:${mod.dep("neoforge_loader")}")
-        mappings(loom.layered {
-            mappings("net.fabricmc:yarn:$minecraft+build.${mod.dep("yarn_build")}:v2")
-            mod.dep("neoforge_patch").takeUnless { it.startsWith('[') }?.let {
-                mappings("dev.architectury:yarn-mappings-patch-neoforge:$it")
-            }
-        })
+        if (usesYarnMappings) {
+            mappings(loom.layered {
+                mappings("net.fabricmc:yarn:$minecraft+build.${mod.dep("yarn_build")}:v2")
+                mod.dep("neoforge_patch").takeUnless { it.startsWith('[') }?.let {
+                    mappings("dev.architectury:yarn-mappings-patch-neoforge:$it")
+                }
+            })
+        }
     }
 }
 
