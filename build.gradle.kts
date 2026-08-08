@@ -1,30 +1,15 @@
 import me.modmuss50.mpp.ReleaseType
 import java.util.*
 
-val minecraft = stonecutter.current.version
-// Derived from the project name (e.g. "26.2-fabric") rather than loom.platform,
-// since which Loom plugin gets applied below depends on this value - and
-// loom.platform is an Architectury Loom extension property that doesn't exist
-// until a Loom plugin is already applied.
-val loader = project.name.substringAfterLast('-')
-
-// Architectury Loom's 1.17.x line has beta-only support for MC 26.1+ and
-// currently crashes on plugin init (see MIGRATION-26.2.md). Fabric-only 26.x
-// targets use plain upstream net.fabricmc.fabric-loom instead, which has
-// non-beta 26.x support. NeoForge has no equivalent escape hatch - Architectury
-// Loom is what bridges Fabric/NeoForge, so 26.x neoforge stays blocked on
-// Architectury Loom's own fix.
-val useFabricLoomDirect = loader == "fabric" && minecraft.startsWith("26.")
-
 plugins {
+    id("dev.architectury.loom")
+    id("architectury-plugin")
     id("me.modmuss50.mod-publish-plugin")
     id("com.gradleup.shadow")
 }
 
-if (!useFabricLoomDirect) {
-    apply(plugin = "architectury-plugin")
-}
-apply(plugin = if (useFabricLoomDirect) "net.fabricmc.fabric-loom" else "dev.architectury.loom")
+val minecraft = stonecutter.current.version
+val loader = loom.platform.get().name.lowercase()
 
 version = "${mod.version}+$minecraft"
 group = mod.group
@@ -32,12 +17,10 @@ base {
     archivesName.set("${mod.id}-$loader")
 }
 
-if (!useFabricLoomDirect) {
-    architectury.common(stonecutter.tree.branches.mapNotNull {
-        if (stonecutter.current.project !in it) null
-        else it.prop("loom.platform")
-    })
-}
+architectury.common(stonecutter.tree.branches.mapNotNull {
+    if (stonecutter.current.project !in it) null
+    else it.prop("loom.platform")
+})
 repositories {
     maven("https://maven.neoforged.net/releases/")
 
@@ -50,9 +33,7 @@ repositories {
 }
 // Minecraft 26.1+ ships unobfuscated with Mojang's official names built in.
 // Yarn was discontinued as of 26.1, so there is nothing to resolve for these
-// targets. See MIGRATION-26.2.md: 26.x fabric uses plain Fabric Loom directly
-// (see useFabricLoomDirect above); 26.x neoforge still blocked on Architectury
-// Loom's own beta 26.x support.
+// targets - see MIGRATION-26.2.md for the current status of 26.2 support.
 val usesYarnMappings = !minecraft.startsWith("26.")
 
 dependencies {
@@ -62,25 +43,16 @@ dependencies {
     modCompileOnly("maven.modrinth:elytra-recast:${mod.dep("elytra_recast")}")
 
     if (loader == "fabric") {
-        if (useFabricLoomDirect) {
-            // Unobfuscated 26.x under plain net.fabricmc.fabric-loom: nothing to
-            // remap, so use plain implementation/compileOnly per Fabric's own
-            // porting guidance rather than the mod-prefixed configs.
-            implementation("net.fabricmc:fabric-loader:${mod.dep("fabric_loader")}")
-            compileOnly("com.terraformersmc:modmenu:${mod.dep("modmenu_version")}")
-            implementation("net.fabricmc.fabric-api:fabric-api:${mod.dep("fabric_version")}")
-        } else {
-            modImplementation("net.fabricmc:fabric-loader:${mod.dep("fabric_loader")}")
-            if (usesYarnMappings) {
-                mappings("net.fabricmc:yarn:$minecraft+build.${mod.dep("yarn_build")}:v2")
-            }
-            modCompileOnly("com.terraformersmc:modmenu:${mod.dep("modmenu_version")}")
-
-            //some features (like automatic resource loading from non vanilla namespaces) work only with fabric API installed
-            //for example translations from assets/modid/lang/en_us.json won't be working, same stuff with textures
-            //but we keep runtime only to not accidentally depend on fabric's api, because it doesn't exist in neo/forge
-            modImplementation("net.fabricmc.fabric-api:fabric-api:${mod.dep("fabric_version")}")
+        modImplementation("net.fabricmc:fabric-loader:${mod.dep("fabric_loader")}")
+        if (usesYarnMappings) {
+            mappings("net.fabricmc:yarn:$minecraft+build.${mod.dep("yarn_build")}:v2")
         }
+        modCompileOnly("com.terraformersmc:modmenu:${mod.dep("modmenu_version")}")
+
+        //some features (like automatic resource loading from non vanilla namespaces) work only with fabric API installed
+        //for example translations from assets/modid/lang/en_us.json won't be working, same stuff with textures
+        //but we keep runtime only to not accidentally depend on fabric's api, because it doesn't exist in neo/forge
+        modImplementation("net.fabricmc.fabric-api:fabric-api:${mod.dep("fabric_version")}")
     }
     if (loader == "forge") {
         "forge"("net.minecraftforge:forge:${minecraft}-${mod.dep("forge_loader")}")
