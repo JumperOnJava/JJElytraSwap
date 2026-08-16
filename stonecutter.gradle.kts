@@ -1,47 +1,24 @@
 plugins {
     id("dev.kikugie.stonecutter")
-    id("dev.architectury.loom") version "1.13-SNAPSHOT" apply false
+    id("dev.architectury.loom") version "1.17-SNAPSHOT" apply false
+    id("dev.architectury.loom-no-remap") version "1.17-SNAPSHOT" apply false
     id("architectury-plugin") version "3.4-SNAPSHOT" apply false
     id("com.gradleup.shadow") version "9.3.0" apply false
     id("me.modmuss50.mod-publish-plugin") version "0.8.4" apply false
 }
-stonecutter active "1.21.11-neoforge" /* [SC] DO NOT EDIT */
-stonecutter.automaticPlatformConstants = true
+stonecutter active "26.2-neoforge" /* [SC] DO NOT EDIT */
 
-// Builds every version into `build/libs/{mod.version}/{loader}`
-stonecutter registerChiseled tasks.register("chiseledBuild", stonecutter.chiseled) {
+tasks.register("chiseledBuild") {
     group = "project"
-    ofTask("buildAndCollect")
+    dependsOn(subprojects.mapNotNull { it.tasks.findByName("buildAndCollect") })
 }
-stonecutter registerChiseled tasks.register("chiseledPublishMods", stonecutter.chiseled) {
+
+tasks.register("chiseledPublishMods") {
     group = "project"
-    ofTask("publishMods")
+    dependsOn(subprojects.mapNotNull { it.tasks.findByName("publishMods") })
 }
-stonecutter registerChiseled tasks.register("chiseledRunAllClients", stonecutter.chiseled) {
+
+tasks.register("chiseledRunAllClients") {
     group = "project"
-    ofTask("runClient")
-}
-
-
-
-// Builds loader-specific versions into `build/libs/{mod.version}/{loader}`
-for (it in stonecutter.tree.branches) {
-    if (it.id.isEmpty()) continue
-    val loader = it.id.upperCaseFirst()
-    stonecutter registerChiseled tasks.register("chiseledBuild$loader", stonecutter.chiseled) {
-        group = "project"
-        versions { branch, _ -> branch == it.id }
-        ofTask("buildAndCollect")
-    }
-}
-
-// Runs active versions for each loader
-for (it in stonecutter.tree.nodes) {
-    if (it.metadata != stonecutter.current || it.branch.id.isEmpty()) continue
-    val types = listOf("Client", "Server")
-    val loader = it.branch.id.upperCaseFirst()
-    for (type in types) it.tasks.register("runActive$type$loader") {
-        group = "project"
-        dependsOn("run$type")
-    }
+    dependsOn(subprojects.mapNotNull { it.tasks.findByName("runClient") })
 }
