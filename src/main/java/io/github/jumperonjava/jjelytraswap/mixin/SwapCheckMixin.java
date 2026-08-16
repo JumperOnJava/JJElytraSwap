@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(LocalPlayer.class)
 public class SwapCheckMixin {
 
-    @Inject(method = "aiStep", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;checkFallFlying()Z", shift = At.Shift.AFTER))
+    @Inject(method = "aiStep", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;tryToStartFallFlying()Z", shift = At.Shift.AFTER))
     public void swapToElytra(CallbackInfo callbackInfo) {
         if (!JJElytraSwapInit.enabled)
             return;
