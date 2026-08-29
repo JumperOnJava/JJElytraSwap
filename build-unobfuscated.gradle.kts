@@ -2,8 +2,7 @@ import me.modmuss50.mpp.ReleaseType
 import java.util.*
 
 plugins {
-    id("dev.architectury.loom")
-    id("architectury-plugin")
+    id("dev.architectury.loom-no-remap")
     id("me.modmuss50.mod-publish-plugin")
     id("com.gradleup.shadow")
 }
@@ -21,73 +20,36 @@ base {
     archivesName.set("${mod.id}-$loader")
 }
 
-architectury.common(stonecutter.tree.branches.mapNotNull {
-    if (stonecutter.current.project !in it) null
-    else it.project.prop("loom.platform")
-})
 repositories {
     maven("https://maven.neoforged.net/releases/")
-
-    //modmenu
     maven("https://maven.terraformersmc.com/")
-    //placeholder api (modmenu depencency)
     maven("https://maven.nucleoid.xyz/")
-
     maven("https://api.modrinth.com/maven")
 }
 dependencies {
     minecraft("com.mojang:minecraft:$minecraft")
 
-
-    modCompileOnly("maven.modrinth:elytra-recast:${mod.dep("elytra_recast")}")
+    compileOnly("maven.modrinth:elytra-recast:${mod.dep("elytra_recast")}")
 
     if (loader == "fabric") {
-        modImplementation("net.fabricmc:fabric-loader:${mod.dep("fabric_loader")}")
-        mappings("net.fabricmc:yarn:$minecraft+build.${mod.dep("yarn_build")}:v2")
-        modCompileOnly("com.terraformersmc:modmenu:${mod.dep("modmenu_version")}")
-
-        //some features (like automatic resource loading from non vanilla namespaces) work only with fabric API installed
-        //for example translations from assets/modid/lang/en_us.json won't be working, same stuff with textures
-        //but we keep runtime only to not accidentally depend on fabric's api, because it doesn't exist in neo/forge
-        modImplementation("net.fabricmc.fabric-api:fabric-api:${mod.dep("fabric_version")}")
-
-    }
-    if (loader == "forge") {
-        "forge"("net.minecraftforge:forge:${minecraft}-${mod.dep("forge_loader")}")
-        mappings("net.fabricmc:yarn:$minecraft+build.${mod.dep("yarn_build")}:v2")
-
-        "io.github.llamalad7:mixinextras-forge:${mod.dep("mixin_extras")}".let {
-            implementation(it)
-            include(it)
-        }
+        implementation("net.fabricmc:fabric-loader:${mod.dep("fabric_loader")}")
+        compileOnly("com.terraformersmc:modmenu:${mod.dep("modmenu_version")}")
+        implementation("net.fabricmc.fabric-api:fabric-api:${mod.dep("fabric_version")}")
     }
     if (loader == "neoforge") {
         "neoForge"("net.neoforged:neoforge:${mod.dep("neoforge_loader")}")
-        mappings(loom.layered {
-            mappings("net.fabricmc:yarn:$minecraft+build.${mod.dep("yarn_build")}:v2")
-            mod.dep("neoforge_patch").takeUnless { it.startsWith('[') }?.let {
-                mappings("dev.architectury:yarn-mappings-patch-neoforge:$it")
-            }
-        })
     }
 }
 
 loom {
-    accessWidenerPath = rootProject.file("src/main/resources/jjelytraswap.accesswidener")
+    accessWidenerPath = rootProject.file("src/main/resources/jjelytraswap-26.accesswidener")
 
     decompilers {
-        get("vineflower").apply { // Adds names to lambdas - useful for mixins
+        get("vineflower").apply {
             options.put("mark-corresponding-synthetics", "1")
         }
     }
-    if (loader == "forge") {
-        forge.mixinConfigs(
-            "jjelytraswap-common.mixins.json",
-            "jjelytraswap-forge.mixins.json",
-        )
-    }
 }
-
 
 val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
@@ -98,8 +60,7 @@ publishMods {
     val modrinthToken = localProperties.getProperty("publish.modrinthToken", "")
     val curseforgeToken = localProperties.getProperty("publish.curseforgeToken", "")
 
-
-    file = project.tasks.remapJar.get().archiveFile
+    file = project.tasks.jar.get().archiveFile
     dryRun = modrinthToken == null || curseforgeToken == null
 
     displayName = "${mod.name} ${loader.replaceFirstChar { it.uppercase() }} ${property("mod.mc_title")}-${mod.version}"
@@ -132,10 +93,10 @@ publishMods {
 }
 
 java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
     withSourcesJar()
-    val java = if (stonecutter.eval(minecraft, ">=1.20.5")) JavaVersion.VERSION_21 else JavaVersion.VERSION_17
-    targetCompatibility = java
-    sourceCompatibility = java
 }
 
 val shadowBundle: Configuration by configurations.creating {
@@ -148,21 +109,16 @@ tasks.shadowJar {
     archiveClassifier = "dev-shadow"
 }
 
-tasks.remapJar {
-    injectAccessWidener = true
-    input = tasks.shadowJar.get().archiveFile
-    archiveClassifier = null
-    dependsOn(tasks.shadowJar)
-}
-
 tasks.jar {
-    archiveClassifier = "dev"
+    archiveClassifier = null
+    from(tasks.shadowJar.get().archiveFile)
+    dependsOn(tasks.shadowJar)
 }
 
 val buildAndCollect = tasks.register<Copy>("buildAndCollect") {
     group = "versioned"
     description = "Must run through 'chiseledBuild'"
-    from(tasks.remapJar.get().archiveFile, tasks.remapSourcesJar.get().archiveFile)
+    from(tasks.jar.get().archiveFile, tasks.named<Jar>("sourcesJar").get().archiveFile)
     into(rootProject.layout.buildDirectory.file("libs/${mod.version}/$loader"))
     dependsOn("build")
 }
@@ -180,6 +136,9 @@ if (stonecutter.current.isActive) {
 }
 
 tasks.processResources {
+    filesMatching("*mixins.json") {
+        filter { line -> line.replace("JAVA_17", "JAVA_25") }
+    }
     properties(
         listOf("fabric.mod.json"),
         "id" to mod.id,
