@@ -1,24 +1,24 @@
 package io.github.jumperonjava.jjelytraswap;
 
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 //THIS CLASS IS UNUSED
 
 public class ConfigScreen extends Screen {
 
     public ConfigScreen(Screen parent) {
-        super(Text.empty());
+        super(Component.empty());
+        this.addRenderableOnly(this::render);
     }
 
-    @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        super.render(context, mouseX, mouseY, delta);
-        context.drawCenteredTextWithShadow(client.textRenderer,
-                "Hello, world",
+    private void render(GuiGraphicsExtractor context,  int mouseX, int mouseY, float delta) {
+        context.textWithBackdrop(minecraft.font,
+                Component.literal("Hello, world!"),
                 width / 2,
                 height / 2,
+                minecraft.font.width("Hello, world!"),
                 0xFFFFFFFF);
     }
 

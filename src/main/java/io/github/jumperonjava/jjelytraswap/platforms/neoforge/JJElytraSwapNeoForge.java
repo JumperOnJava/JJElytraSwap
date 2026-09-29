@@ -3,9 +3,9 @@ package io.github.jumperonjava.jjelytraswap.platforms.neoforge;
 
 import io.github.jumperonjava.jjelytraswap.JJElytraSwapInit;
 import io.github.jumperonjava.jjelytraswap.ModPlatform;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModList;
@@ -54,25 +54,19 @@ public class JJElytraSwapNeoForge {
         }
 
 
-        List<Consumer<MinecraftClient>> clientEvents = new ArrayList<>();
+        List<Consumer<Minecraft>> clientEvents = new ArrayList<>();
 
         @Override
-        public void registerClientTickEvent(Consumer<MinecraftClient> o) {
-            GAME_EVENT_BUS.addListener((Consumer<ClientTickEvent.Post>)event -> o.accept(MinecraftClient.getInstance()));
+        public void registerClientTickEvent(Consumer<Minecraft> o) {
+            GAME_EVENT_BUS.addListener((Consumer<ClientTickEvent.Post>)event -> o.accept(Minecraft.getInstance()));
         }
 
         @Override
-        public KeyBinding registerKeyBind(String translationKeyName, int defaultKeyId) {
-            //? if >= 1.21.9 {
-            KeyBinding.Category kbCategory = new KeyBinding.Category(Identifier.of("jjelytraswap","generic"));
-            var keyBinding = new KeyBinding(translationKeyName,defaultKeyId,kbCategory);
-            MOD_EVENT_BUS.addListener((Consumer<RegisterKeyMappingsEvent>) event -> event.register(keyBinding));
-            return keyBinding;
-            //?} else {
-            /*var keyBinding = new KeyBinding(translationKeyName, defaultKeyId, "JJElytraSwap");
-            MOD_EVENT_BUS.addListener((Consumer<RegisterKeyMappingsEvent>) event -> event.register(keyBinding));
-            return keyBinding;
-            *///?}
+        public KeyMapping registerKeyMap(String translationKeyName, int defaultKeyId) {
+            KeyMapping.Category kbCategory = new KeyMapping.Category(Identifier.fromNamespaceAndPath("jjelytraswap","generic"));
+            var keyMapping = new KeyMapping(translationKeyName,defaultKeyId,kbCategory);
+            MOD_EVENT_BUS.addListener((Consumer<RegisterKeyMappingsEvent>) event -> event.register(keyMapping));
+            return keyMapping;
         }
     }
 }

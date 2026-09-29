@@ -1,115 +1,261 @@
+import java.util.Properties
+import net.fabricmc.loom.api.LoomGradleExtensionAPI
+import net.neoforged.moddevgradle.dsl.NeoForgeExtension
 import me.modmuss50.mpp.ReleaseType
-import java.util.*
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
-    id("dev.architectury.loom")
-    id("architectury-plugin")
+    id("net.fabricmc.fabric-loom") version "1.18-SNAPSHOT" apply false
+    id("net.neoforged.moddev") version "2.0.147" apply false
     id("me.modmuss50.mod-publish-plugin")
-    id("com.gradleup.shadow")
+    id("com.gradleup.shadow") apply false
 }
 
-val minecraft = stonecutter.current.version
-val loader = loom.platform.get().name.lowercase()
+// Exposes this node's ["<mc version>"] section from versions/<mc version>.toml
+// as bare mod.*/deps.* properties (the ["<node>"] section is unprefixed by default).
+stonecutter.properties.tags(stonecutter.current.version)
 
-version = "${mod.version}+$minecraft"
+val platform = requireNotNull(findProperty("mod.platform") as? String) {
+    "Missing 'mod.platform' for ${stonecutter.current.project}"
+}
+val minecraft_version = stonecutter.current.version
+val loader = platform
+
+version = "${mod.version}+${minecraft_version}"
 group = mod.group
+
 base {
-    archivesName.set("${mod.id}-$loader")
+    archivesName.set("${mod.id}-${loader}")
 }
 
-architectury.common(stonecutter.tree.branches.mapNotNull {
-    if (stonecutter.current.project !in it) null
-    else it.prop("loom.platform")
-})
-repositories {
-    maven("https://maven.neoforged.net/releases/")
-
-    //modmenu
-    maven("https://maven.terraformersmc.com/")
-    //placeholder api (modmenu depencency)
-    maven("https://maven.nucleoid.xyz/")
-
-    maven("https://api.modrinth.com/maven")
+// -----------------------------------------------------------------------------
+// Plugins Configuration
+// -----------------------------------------------------------------------------
+when (platform) {
+    "fabric" -> {
+        apply(plugin = "net.fabricmc.fabric-loom")
+        apply(plugin = "com.gradleup.shadow")
+    }
+    "neoforge" -> {
+        apply(plugin = "net.neoforged.moddev")
+    }
 }
-dependencies {
-    minecraft("com.mojang:minecraft:$minecraft")
 
+// -----------------------------------------------------------------------------
+// Loader Specific Logic
+// -----------------------------------------------------------------------------
+when (platform) {
+    "fabric" -> {
+        configure<LoomGradleExtensionAPI> {
+            val ctVersion = (findProperty("mod.ct_version") as String?) ?: "fallback"
+            accessWidenerPath.set(rootProject.file("src/main/resources/ct/jjelytraswap.${ctVersion}.classtweaker"))
 
-    modCompileOnly("maven.modrinth:elytra-recast:${mod.dep("elytra_recast")}")
-
-    if (loader == "fabric") {
-        modImplementation("net.fabricmc:fabric-loader:${mod.dep("fabric_loader")}")
-        mappings("net.fabricmc:yarn:$minecraft+build.${mod.dep("yarn_build")}:v2")
-        modCompileOnly("com.terraformersmc:modmenu:${mod.dep("modmenu_version")}")
-
-        //some features (like automatic resource loading from non vanilla namespaces) work only with fabric API installed
-        //for example translations from assets/modid/lang/en_us.json won't be working, same stuff with textures
-        //but we keep runtime only to not accidentally depend on fabric's api, because it doesn't exist in neo/forge
-        modImplementation("net.fabricmc.fabric-api:fabric-api:${mod.dep("fabric_version")}")
-
-    }
-    if (loader == "forge") {
-        "forge"("net.minecraftforge:forge:${minecraft}-${mod.dep("forge_loader")}")
-        mappings("net.fabricmc:yarn:$minecraft+build.${mod.dep("yarn_build")}:v2")
-
-        "io.github.llamalad7:mixinextras-forge:${mod.dep("mixin_extras")}".let {
-            implementation(it)
-            include(it)
-        }
-    }
-    if (loader == "neoforge") {
-        "neoForge"("net.neoforged:neoforge:${mod.dep("neoforge_loader")}")
-        mappings(loom.layered {
-            mappings("net.fabricmc:yarn:$minecraft+build.${mod.dep("yarn_build")}:v2")
-            mod.dep("neoforge_patch").takeUnless { it.startsWith('[') }?.let {
-                mappings("dev.architectury:yarn-mappings-patch-neoforge:$it")
+            decompilers {
+                get("vineflower").apply {
+                    options.put("mark-corresponding-synthetics", "1")
+                }
             }
-        })
-    }
-}
-
-loom {
-    accessWidenerPath = rootProject.file("src/main/resources/jjelytraswap.accesswidener")
-
-    decompilers {
-        get("vineflower").apply { // Adds names to lambdas - useful for mixins
-            options.put("mark-corresponding-synthetics", "1")
         }
     }
-    if (loader == "forge") {
-        forge.mixinConfigs(
-            "jjelytraswap-common.mixins.json",
-            "jjelytraswap-forge.mixins.json",
-        )
+    "neoforge" -> {
+        val atVersion = (findProperty("mod.at_version") as String?) ?: "fallback"
+        val accessTransformerName = "jjelytraswap.${atVersion}.accesstransformer"
+
+        configure<NeoForgeExtension> {
+            version = mod.dep("neoforge_loader") as String
+            accessTransformers.from(rootProject.file("src/main/resources/at/${accessTransformerName}"))
+
+            runs {
+                register("client") {
+                    client()
+                    systemProperty("neoforge.enabledGameTestNamespaces", mod.id)
+                }
+
+                register("server") {
+                    server()
+                    programArgument("--nogui")
+                    systemProperty("neoforge.enabledGameTestNamespaces", mod.id)
+                }
+
+                register("gameTestServer") {
+                    type = "gameTestServer"
+                    systemProperty("neoforge.enabledGameTestNamespaces", mod.id)
+                }
+
+                register("data") {
+                    clientData()
+                    programArguments.addAll(
+                        "--mod", mod.id,
+                        "--all",
+                        "--output", file("src/generated/resources/").absolutePath,
+                        "--existing", file("src/main/resources/").absolutePath
+                    )
+                }
+                configureEach {
+                    systemProperty("forge.logging.markers", "REGISTRIES")
+                    logLevel.set(org.slf4j.event.Level.DEBUG)
+                }
+            }
+
+            mods {
+                create(mod.id) {
+                    sourceSet(sourceSets.main.get())
+                }
+            }
+        }
     }
 }
 
+// -----------------------------------------------------------------------------
+// Repositories & Dependencies
+// -----------------------------------------------------------------------------
+repositories {
+    when (platform) {
+        "fabric" -> {
+            maven("https://maven.neoforged.net/releases/")
+            maven("https://maven.terraformersmc.com/")
+            maven("https://maven.nucleoid.xyz/")
+        }
+    }
+}
 
+dependencies {
+    when (platform) {
+        "fabric" -> {
+            "minecraft"("com.mojang:minecraft:${minecraft_version}")
+            implementation("net.fabricmc:fabric-loader:${mod.dep("fabric_loader")}")
+            implementation("com.terraformersmc:modmenu:${mod.dep("modmenu_version")}")
+            implementation("net.fabricmc.fabric-api:fabric-api:${mod.dep("fabric_version")}")
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Common Java & SourceSets Configuration
+// -----------------------------------------------------------------------------
+java {
+    withSourcesJar()
+    toolchain.languageVersion.set(JavaLanguageVersion.of(25))
+}
+
+sourceSets.main {
+    resources {
+        when (platform) {
+            "neoforge" -> {
+                srcDir("src/generated/resources")
+                exclude("**/*.bbmodel")
+                exclude("src/generated/**/.cache")
+            }
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Platform-Specific Tasks Configuration
+// -----------------------------------------------------------------------------
+when (platform) {
+    "fabric" -> {
+        val shadowBundle = configurations.create("shadowBundle") {
+            isCanBeConsumed = false
+            isCanBeResolved = true
+        }
+
+        tasks.named<ShadowJar>("shadowJar") {
+            configurations = listOf(shadowBundle)
+            archiveClassifier.set("dev-shadow")
+        }
+
+        tasks.jar {
+            archiveClassifier.set("dev")
+        }
+    }
+    "neoforge" -> {
+        val localRuntime = configurations.create("localRuntime")
+        configurations.runtimeClasspath.get().extendsFrom(localRuntime)
+
+        val atVersion = (findProperty("mod.at_version") as String?) ?: "fallback"
+        val accessTransformerName = "jjelytraswap.${atVersion}.accesstransformer"
+
+        val generateModMetadata = tasks.register<ProcessResources>("generateModMetadata") {
+            val replaceProperties = mapOf(
+                "minecraft_version" to minecraft_version,
+                "neo_version" to mod.dep("neoforge_loader"),
+                "mod_id" to mod.id,
+                "mod_name" to mod.name,
+                "mod_version" to mod.version
+            )
+            inputs.properties(replaceProperties)
+            expand(replaceProperties)
+            from(rootProject.file("src/main/templates"))
+            into("build/generated/sources/modMetadata")
+        }
+        sourceSets.main.get().resources.srcDir(generateModMetadata)
+
+        extensions.configure<NeoForgeExtension>("neoForge") {
+            ideSyncTask(generateModMetadata)
+        }
+    }
+}
+
+tasks.processResources {
+
+//    when (platform) {
+//        "fabric" -> {
+            properties(
+                listOf("fabric.mod.json"),
+                "id" to mod.id,
+                "name" to mod.name,
+                "version" to mod.version,
+                "minecraft" to mod.prop("mc_dep_fabric")
+            )
+//        }
+//        "neoforge" -> {
+            val atVersion = (findProperty("mod.at_version") as String?) ?: "fallback"
+            val accessTransformerName = "jjelytraswap.${atVersion}.accesstransformer"
+
+            properties(
+                listOf("META-INF/neoforge.mods.toml", "pack.mcmeta"),
+                "id" to mod.id,
+                "name" to mod.name,
+                "version" to mod.version,
+                "minecraft" to mod.prop("mc_dep_forgelike"),
+                "file" to mod.prop("mc_dep_forgelike")
+            )
+            from(rootProject.file("src/main/resources/at/${accessTransformerName}")) {
+                rename { "META-INF/accesstransformer.cfg" }
+            }
+//        }
+//    }
+}
+
+// -----------------------------------------------------------------------------
+// Common Build, Publish & Stonecutter Tasks
+// -----------------------------------------------------------------------------
 val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
     localProperties.load(localPropertiesFile.inputStream())
 }
+
 publishMods {
     val modrinthToken = localProperties.getProperty("publish.modrinthToken", "")
     val curseforgeToken = localProperties.getProperty("publish.curseforgeToken", "")
 
+    file.set(tasks.jar.get().archiveFile)
+    dryRun.set(modrinthToken.isEmpty() || curseforgeToken.isEmpty())
 
-    file = project.tasks.remapJar.get().archiveFile
-    dryRun = modrinthToken == null || curseforgeToken == null
-
-    displayName = "${mod.name} ${loader.replaceFirstChar { it.uppercase() }} ${property("mod.mc_title")}-${mod.version}"
-    version = mod.version
-    changelog = rootProject.file("CHANGELOG.md").readText()
-    type = ReleaseType.STABLE
+    displayName.set("${mod.name}${loader.replaceFirstChar { it.uppercase() }} ${property("mod.publish_name")}-${mod.version}")
+    version.set(mod.version)
+    changelog.set(rootProject.file("CHANGELOG.md").readText())
+    type.set(ReleaseType.BETA)
 
     modLoaders.add(loader)
 
-    val targets = property("mod.mc_targets").toString().split(' ')
+    val targets = property("mod.publish_versions").toString().split(' ')
     modrinth {
-        projectId = property("publish.modrinth").toString()
-        accessToken = modrinthToken
-        targets.forEach(minecraftVersions::add)
+        projectId.set(property("publish.modrinth").toString())
+        accessToken.set(modrinthToken)
+        targets.forEach { minecraftVersions.add(it) }
         if (loader == "fabric") {
             requires("fabric-api")
             optional("modmenu")
@@ -117,9 +263,9 @@ publishMods {
     }
 
     curseforge {
-        projectId = property("publish.curseforge").toString()
-        accessToken = curseforgeToken.toString()
-        targets.forEach(minecraftVersions::add)
+        projectId.set(property("publish.curseforge").toString())
+        accessToken.set(curseforgeToken)
+        targets.forEach { minecraftVersions.add(it) }
         if (loader == "fabric") {
             requires("fabric-api")
             optional("modmenu")
@@ -127,39 +273,11 @@ publishMods {
     }
 }
 
-java {
-    withSourcesJar()
-    val java = if (stonecutter.eval(minecraft, ">=1.20.5")) JavaVersion.VERSION_21 else JavaVersion.VERSION_17
-    targetCompatibility = java
-    sourceCompatibility = java
-}
-
-val shadowBundle: Configuration by configurations.creating {
-    isCanBeConsumed = false
-    isCanBeResolved = true
-}
-
-tasks.shadowJar {
-    configurations = listOf(shadowBundle)
-    archiveClassifier = "dev-shadow"
-}
-
-tasks.remapJar {
-    injectAccessWidener = true
-    input = tasks.shadowJar.get().archiveFile
-    archiveClassifier = null
-    dependsOn(tasks.shadowJar)
-}
-
-tasks.jar {
-    archiveClassifier = "dev"
-}
-
 val buildAndCollect = tasks.register<Copy>("buildAndCollect") {
     group = "versioned"
     description = "Must run through 'chiseledBuild'"
-    from(tasks.remapJar.get().archiveFile, tasks.remapSourcesJar.get().archiveFile)
-    into(rootProject.layout.buildDirectory.file("libs/${mod.version}/$loader"))
+    from(tasks.jar.get().archiveFile)
+    into(rootProject.layout.buildDirectory.file("libs/${mod.version}/${loader}"))
     dependsOn("build")
 }
 
@@ -175,31 +293,11 @@ if (stonecutter.current.isActive) {
     }
 }
 
-tasks.processResources {
-    properties(
-        listOf("fabric.mod.json"),
-        "id" to mod.id,
-        "name" to mod.name,
-        "version" to mod.version,
-        "minecraft" to mod.prop("mc_dep_fabric")
-    )
-    properties(
-        listOf("META-INF/mods.toml", "pack.mcmeta"),
-        "id" to mod.id,
-        "name" to mod.name,
-        "version" to mod.version,
-        "minecraft" to mod.prop("mc_dep_forgelike")
-    )
-    properties(
-        listOf("META-INF/neoforge.mods.toml", "pack.mcmeta"),
-        "id" to mod.id,
-        "name" to mod.name,
-        "version" to mod.version,
-        "minecraft" to mod.prop("mc_dep_forgelike")
-    )
-}
-
 tasks.build {
     group = "versioned"
     description = "Must run through 'chiseledBuild'"
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.encoding = "UTF-8"
 }

@@ -1,47 +1,29 @@
 plugins {
     id("dev.kikugie.stonecutter")
-    id("dev.architectury.loom") version "1.13-SNAPSHOT" apply false
-    id("architectury-plugin") version "3.4-SNAPSHOT" apply false
     id("com.gradleup.shadow") version "9.3.0" apply false
-    id("me.modmuss50.mod-publish-plugin") version "0.8.4" apply false
+    id("me.modmuss50.mod-publish-plugin") version "2.2.1" apply false
 }
-stonecutter active "1.21.11-neoforge" /* [SC] DO NOT EDIT */
-stonecutter.automaticPlatformConstants = true
+stonecutter active "26.2-neoforge" /* [SC] DO NOT EDIT */
 
-// Builds every version into `build/libs/{mod.version}/{loader}`
-stonecutter registerChiseled tasks.register("chiseledBuild", stonecutter.chiseled) {
-    group = "project"
-    ofTask("buildAndCollect")
-}
-stonecutter registerChiseled tasks.register("chiseledPublishMods", stonecutter.chiseled) {
-    group = "project"
-    ofTask("publishMods")
-}
-stonecutter registerChiseled tasks.register("chiseledRunAllClients", stonecutter.chiseled) {
-    group = "project"
-    ofTask("runClient")
-}
-
-
-
-// Builds loader-specific versions into `build/libs/{mod.version}/{loader}`
-for (it in stonecutter.tree.branches) {
-    if (it.id.isEmpty()) continue
-    val loader = it.id.upperCaseFirst()
-    stonecutter registerChiseled tasks.register("chiseledBuild$loader", stonecutter.chiseled) {
-        group = "project"
-        versions { branch, _ -> branch == it.id }
-        ofTask("buildAndCollect")
+stonecutter parameters {
+    constants{
+        val loader = node.metadata.project.substringAfterLast('-')
+        match(loader, "fabric", "neoforge", "forge")
     }
 }
 
-// Runs active versions for each loader
-for (it in stonecutter.tree.nodes) {
-    if (it.metadata != stonecutter.current || it.branch.id.isEmpty()) continue
-    val types = listOf("Client", "Server")
-    val loader = it.branch.id.upperCaseFirst()
-    for (type in types) it.tasks.register("runActive$type$loader") {
-        group = "project"
-        dependsOn("run$type")
+tasks.register("jjelytraswap_buildAll") {
+    group = "build"
+    dependsOn(sc.tree.nodes.map { "${it.hierarchy}:build" })
+
+    doLast {
+        val rootBuildDir = layout.buildDirectory.asFile.get().resolve("libs");
+        sc.tree.nodes.forEach { node ->
+            val subprojectBuildDir = project(node.hierarchy.toString()).layout.buildDirectory.asFile.get()
+            copy {
+                from(fileTree("$subprojectBuildDir/libs").matching { include("*.jar") })
+                into(rootBuildDir.resolve(node.name.split(":").last()))
+            }
+        }
     }
 }

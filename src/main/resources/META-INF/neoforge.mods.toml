@@ -9,6 +9,7 @@ version = "${version}"
 displayName = "${name}"
 authors = "JavaJumper"
 description = ""
+bannerFile = "assets/jjelytraswap/icon.png"
 logoFile = "assets/jjelytraswap/icon.png"
 logoBlur = false
 

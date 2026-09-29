@@ -1,8 +1,8 @@
 package io.github.jumperonjava.jjelytraswap;
 
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
 
 import java.util.function.Consumer;
 
@@ -13,7 +13,7 @@ import java.util.function.Consumer;
 public interface ModPlatform {
     String getModloader();
     boolean isModLoaded(String modloader);
-    void registerClientTickEvent(Consumer<MinecraftClient> o);
+    void registerClientTickEvent(Consumer<Minecraft> o);
 
-    KeyBinding registerKeyBind(String translationKeyName, int defaultKeyId);
+    KeyMapping registerKeyMap(String translationKeyName, int defaultKeyId);
 }
