@@ -1,0 +1,17 @@
+["26.2"]
+mod.mc_dep_fabric = "26.2.x"
+mod.mc_dep_forgelike = "[26.2, 26.3)"
+mod.publish_name = "26.2"
+mod.publish_versions = "26.2"
+
+#access transformer
+mod.at_version = "unversioned"
+#class tweaker
+mod.ct_version = "unversioned"
+
+["26.2-fabric"]
+deps.fabric_version = "0.161.0+26.2"
+deps.modmenu_version = "20.0.3"
+
+["26.2-neoforge"]
+deps.neoforge_loader = "26.2.0.88"
