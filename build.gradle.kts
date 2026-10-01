@@ -254,6 +254,7 @@ publishMods {
     modrinth {
         projectId.set(property("publish.modrinth").toString())
         accessToken.set(modrinthToken)
+
         targets.forEach { minecraftVersions.add(it) }
         if (loader == "fabric") {
             requires("fabric-api")
@@ -269,6 +270,8 @@ publishMods {
             requires("fabric-api")
             optional("modmenu")
         }
+        client = true
+        server = false
     }
 }
 
