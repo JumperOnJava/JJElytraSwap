@@ -1,5 +1,5 @@
 //? if fabric {
-/*package io.github.jumperonjava.jjelytraswap.platforms.fabric;
+package io.github.jumperonjava.jjelytraswap.platforms.fabric;
 
 import io.github.jumperonjava.jjelytraswap.ModPlatform;
 import net.fabricmc.api.ClientModInitializer;
@@ -44,4 +44,4 @@ public class JJElytraSwapFabric implements ClientModInitializer {
 		}
 	}
 }
-*///?}
+//?}

@@ -198,9 +198,8 @@ when (platform) {
 }
 
 tasks.processResources {
-
-//    when (platform) {
-//        "fabric" -> {
+    when (platform) {
+        "fabric" -> {
             properties(
                 listOf("fabric.mod.json"),
                 "id" to mod.id,
@@ -208,8 +207,8 @@ tasks.processResources {
                 "version" to mod.version,
                 "minecraft" to mod.prop("mc_dep_fabric")
             )
-//        }
-//        "neoforge" -> {
+        }
+        "neoforge" -> {
             val atVersion = (findProperty("mod.at_version") as String?) ?: "fallback"
             val accessTransformerName = "jjelytraswap.${atVersion}.accesstransformer"
 
@@ -224,8 +223,8 @@ tasks.processResources {
             from(rootProject.file("src/main/resources/at/${accessTransformerName}")) {
                 rename { "META-INF/accesstransformer.cfg" }
             }
-//        }
-//    }
+        }
+    }
 }
 
 // -----------------------------------------------------------------------------

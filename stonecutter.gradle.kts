@@ -3,7 +3,7 @@ plugins {
     id("com.gradleup.shadow") version "9.3.0" apply false
     id("me.modmuss50.mod-publish-plugin") version "2.2.1" apply false
 }
-stonecutter active "26.2-neoforge" /* [SC] DO NOT EDIT */
+stonecutter active "26.1-fabric" /* [SC] DO NOT EDIT */
 
 stonecutter parameters {
     constants{
